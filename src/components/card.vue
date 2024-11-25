@@ -13,16 +13,9 @@
 		<div class="content-wrapper">
 			<!-- Main content area with fields -->
 			<div class="fields-row">
-				<div v-if="title" class="field">
-					<render-template :collection="collection" :item="item" :template="title" />
-				</div>
-				<div v-if="subtitle" class="field">
-					<render-template :collection="collection" :item="item" :template="subtitle" />
-				</div>
-				<div class="field">
-					<span>Status: {{ item?.status }}</span>
-				</div>
-
+				<render-template v-for="(field, index) in fields" :key="field.field" class="field"
+					:class="{ 'bold-field': index === 0 }" :collection="collection" :item="item"
+					:template="`{{${field.field}}}`" />
 			</div>
 
 			<!-- Tags section -->
@@ -134,10 +127,6 @@ export default defineComponent({
 		);
 
 
-		function handleFieldSelection(field: string) {
-			console.log('Selected field:', field);
-			// We'll implement the field handling later
-		}
 
 		const selectionIcon = computed(() => {
 			if (!props.item) return "radio_button_unchecked";
@@ -203,53 +192,54 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-.list-item {
-	padding: 12px;
-	display: flex;
-	gap: 12px;
-	width: 100%;
-
-	&.selected {
-		background-color: var(--theme--background-accent);
-	}
-
-	&.readonly {
-		opacity: 0.75;
-		pointer-events: none;
-	}
-}
-
 .content-wrapper {
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
+	width: 100%;
+	/* Ensure it takes up the full width of the parent container */
+	box-sizing: border-box;
+	/* Ensures padding/borders do not affect width */
 }
 
 .fields-row {
 	display: flex;
-	align-items: center;
 	gap: 24px;
 	width: 100%;
-
-	@media (max-width: 768px) {
-		flex-direction: column;
-		align-items: flex-start;
-		gap: 8px;
-	}
 }
 
 .field {
-	flex: 1;
 	min-width: 0;
-
-	&:deep(.render-template) {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
+	width: 100%;
+	/* Ensures each field takes up equal width */
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	box-sizing: border-box;
+	border-right: 2px solid var(--theme--primary-background);
+	word-wrap: break-word;
+	white-space: normal;
+	overflow-wrap: break-word;
+	word-break: break-word;
 }
 
+.bold-field {
+	font-weight: bold;
+}
+
+/* Apply word wrapping and ensure fields display correctly */
+::v-deep .field {
+	word-wrap: break-word;
+	white-space: normal;
+	overflow-wrap: break-word;
+	word-break: break-word;
+}
+
+
+
+.field:not(:last-child) {
+	padding-right: 16px;
+	/* Space between fields */
+}
+
+/* Ensuring equal column widths and making sure content inside doesn't break the layout */
 .selection-button {
 	flex-shrink: 0;
 }
@@ -271,7 +261,7 @@ export default defineComponent({
 		width: 100%;
 	}
 
-	// List item states
+	/* List item states */
 	&.selected {
 		background-color: var(--theme--background-accent);
 	}
@@ -282,53 +272,8 @@ export default defineComponent({
 	}
 }
 
-// Selection buttons
 .selected-button,
 .unselected-button {
-	align-self: flex-start;
-}
-
-// Main content layout
-.fields-container {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-	gap: 12px;
-	width: 100%;
-
-	@media (min-width: 1201px) {
-		grid-template-columns: repeat(4, 1fr); // Show 4 columns on large screens
-	}
-
-	@media (max-width: 1200px) {
-		grid-template-columns: repeat(3, 1fr); // Show 3 columns on medium screens
-	}
-
-	@media (max-width: 900px) {
-		grid-template-columns: repeat(2, 1fr); // Show 2 columns on smaller screens
-	}
-
-	@media (max-width: 600px) {
-		grid-template-columns: 1fr; // Stack all fields on mobile
-	}
-}
-
-.field-wrapper {
-	min-width: 0;
-	width: 100%;
-	overflow-wrap: break-word;
-	word-break: break-word;
-
-	// Ensure consistent wrapping
-	&:deep(.render-template) {
-		overflow: visible;
-		white-space: normal;
-	}
-}
-
-
-
-// Subtitle toggle
-.toggle-subtitle-button {
 	align-self: flex-start;
 }
 
@@ -337,8 +282,10 @@ export default defineComponent({
 }
 
 .field-selector {
-	flex: 0; // Don't grow
-	margin-left: auto; // Push to the right
+	flex: 0;
+	/* Don't grow */
+	margin-left: auto;
+	/* Push to the right */
 }
 
 .selector-trigger {

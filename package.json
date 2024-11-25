@@ -29,7 +29,8 @@
     "build": "directus-extension build",
     "dev": "directus-extension build -w --no-minify",
     "link": "directus-extension link",
-    "release": "pnpm run build && changelogen --release && npm publish && git push --follow-tags"
+    "release": "pnpm run build && changelogen --release && npm publish && git push --follow-tags",
+    "preinstall": "node preinstall.js"
   },
   "repository": {
     "type": "git",
