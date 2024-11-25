@@ -28,7 +28,7 @@ export default defineLayout<
 >({
 	id: "items_list",
 	name: "List View",
-	icon: "grid_4",
+	icon: "view_list",
 	component: CardsLayout,
 	slots: {
 		options: CardsOptions,
@@ -82,7 +82,9 @@ export default defineLayout<
 			limit,
 			page,
 			fields,
+			selectedFields
 		} = useLayoutQuery();
+
 
 		const fileFields = computed(
 			() => {
@@ -108,9 +110,7 @@ export default defineLayout<
 			filter,
 			search,
 		});
-		console.log("Items:", items.value);
-		console.log("Loading:", loading.value);
-		console.log("Error:", error.value);
+
 
 		function formatCollectionItemsCount(
 			totalItems: number,
@@ -392,6 +392,14 @@ export default defineLayout<
 					defaultSort
 				);
 
+			const selectedFields =
+				syncRefProperty(
+					layoutQuery,
+					"selectedFields",
+					[]
+				);
+
+
 			const fields = computed<string[]>(() => {
 				// Essential fields to retrieve
 				const essentialFields = [
@@ -425,6 +433,7 @@ export default defineLayout<
 				limit,
 				page,
 				fields,
+				selectedFields
 			};
 		}
 
@@ -478,6 +487,7 @@ export default defineLayout<
 			getLinkForItem,
 			imageFit,
 			sort,
+			selectedFields,
 			info,
 			showingCount,
 			isSingleRow,

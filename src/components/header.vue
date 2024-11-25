@@ -32,14 +32,36 @@
 				<v-icon v-tooltip.top="t('sort_direction')" class="sort-direction" :class="{ descending }" name="sort"
 					clickable @click="toggleDescending"></v-icon>
 			</v-chip>
-			<v-list>
-				<v-list-item v-for="field in selectedFields" :key="field.field">
-					{{ field.name }}
-				</v-list-item>
-			</v-list>
+			<!-- Fields Selector -->
+			<v-chip :label="false" color="primary" clickable>
+				<v-menu placement="bottom-end" show-arrow>
+					<template #activator="{ toggle }">
+						<div class="selected-fields-chip" @click="toggle">
+							<v-icon name="list" outline></v-icon>
+							<span>{{ selectedFieldsSync.length }} fields</span>
+						</div>
+					</template>
 
-			<!-- Field selector-->
-			<div class="field-selector">
+					<!-- Popup List -->
+					<v-list>
+						<v-list-item v-for="(field, index) in selectedFieldsSync" :key="field.field">
+							<v-list-item-action>
+								<!-- Remove icon -->
+								<v-icon name="close" clickable @click.stop="removeField(field.field)"
+									title="Remove"></v-icon>
+							</v-list-item-action>
+							<v-list-item-content>{{ field.name }}</v-list-item-content>
+							<v-list-item-action>
+								<!-- Up Arrow -->
+								<v-icon v-if="index > 0" name="arrow_upward" clickable
+									@click.stop="moveFieldUp(index)"></v-icon>
+								<!-- Down Arrow -->
+								<v-icon v-if="index < selectedFieldsSync.length - 1" name="arrow_downward" clickable
+									@click.stop="moveFieldDown(index)"></v-icon>
+							</v-list-item-action>
+						</v-list-item>
+					</v-list>
+				</v-menu>
 				<v-menu placement="bottom-end" show-arrow :close-on-content-click="false">
 					<template #activator="{ toggle, active }">
 						<v-icon v-tooltip="t('add_field')" class="add-field" name="add" :class="{ active }" clickable
@@ -49,8 +71,10 @@
 					<v-field-list :collection="collection" :disabled-fields="disabledFields" :allow-select-all="false"
 						@add="addField">
 					</v-field-list>
+
 				</v-menu>
-			</div>
+			</v-chip>
+
 		</div>
 	</div>
 </template>
@@ -95,6 +119,10 @@ export default defineComponent({
 			type: String,
 			default: null,
 		},
+		selectedFields: {
+			type: Array as PropType<Field[]>,
+			default: () => [], // Provide an empty array as the default value
+		},
 	},
 
 	emits: [
@@ -103,7 +131,8 @@ export default defineComponent({
 		"update:sort",
 		"update:selection",
 		"update:selectedField",
-		"update:fields"
+		"update:fields",
+		"update:selectedFields"
 	],
 
 	setup(props, { emit }) {
@@ -113,6 +142,7 @@ export default defineComponent({
 		const sizeSync = useSync(props, "size", emit);
 		const sortSync = useSync(props, "sort", emit);
 		const selectionSync = useSync(props, "selection", emit);
+		const selectedFieldsSync = useSync(props, "selectedFields", emit);
 		const selectedFields = ref<Field[]>([]); // List of selected fields
 
 
@@ -129,32 +159,42 @@ export default defineComponent({
 
 
 
-		// Handle adding new fields
+		// Handle adding and removing fields
 		function addField(fieldKey: string | string[]) {
 			const key = Array.isArray(fieldKey) ? fieldKey[0] : fieldKey;
-			console.log("Resolved field key:", key);
 
 			const fieldToAdd = props.fields.find(f => f.field === key);
-			console.log("Field found in props.fields:", fieldToAdd);
 
-			if (fieldToAdd && !selectedFields.value.some(field => field.field === key)) {
-				// Debug before updating the selectedFields array
-				console.log("Before adding field:", selectedFields.value);
-
+			if (fieldToAdd && !selectedFieldsSync.value.some(field => field.field === key)) {
 				// Reactively update the array
-				selectedFields.value = [...selectedFields.value, fieldToAdd];
-
-				// Debug after updating the selectedFields array
-				console.log("After adding field:", selectedFields.value);
+				selectedFieldsSync.value = [...selectedFieldsSync.value, fieldToAdd];
 
 				// Emit the updated fields list to the parent
-				emit('update:fields', [...props.fields, fieldToAdd]);
+				emit('update:selectedFields', [...selectedFieldsSync.value, fieldToAdd]);
+
 			}
-			console.log("Selected fields list:", selectedFields.value);
 		}
 
+		function removeField(fieldKey) {
+			selectedFieldsSync.value = selectedFieldsSync.value.filter(f => f.field !== fieldKey);
 
+		}
 
+		function moveFieldUp(index: number) {
+			if (index === 0) return; // Already at the top
+			const fields = [...selectedFieldsSync.value];
+			[fields[index - 1], fields[index]] = [fields[index], fields[index - 1]];
+			selectedFieldsSync.value = fields;
+			emit('update:selectedFields', fields); // Emit the updated order
+		}
+
+		function moveFieldDown(index: number) {
+			if (index === selectedFieldsSync.value.length - 1) return; // Already at the bottom
+			const fields = [...selectedFieldsSync.value];
+			[fields[index], fields[index + 1]] = [fields[index + 1], fields[index]];
+			selectedFields.value = fields;
+			emit('update:selectedFields', fields); // Emit the updated order
+		}
 
 
 		// Sort handling 
@@ -190,7 +230,11 @@ export default defineComponent({
 		return {
 			t,
 			addField,
+			removeField,
 			selectedFields,
+			selectedFieldsSync,
+			moveFieldUp,
+			moveFieldDown,
 			descending,
 			sortField,
 			sortKey,
@@ -199,7 +243,9 @@ export default defineComponent({
 			sortSync,
 			selectionSync,
 			toggleDescending,
-			disabledFields
+			disabledFields,
+
+
 		};
 	}
 });

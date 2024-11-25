@@ -3,14 +3,15 @@
 		'--size': width >= 600 ? size : 1,
 	}">
 		<template v-if="loading || itemCount > 0">
+			<cards-header :collection="collection" v-model:size="sizeWritable" v-model:selection="selectionWritable"
+				v-model:sort="sortWritable" v-model:selectedFields="selectedFieldsWritable" :fields="fieldsInCollection"
+				:show-select="showSelect" @select-all="selectAll" />
 
-			<cards-header :collection="collection" v-model:size="sizeWritable" v-model:selection="selectionWritable" v-model:sort="sortWritable"
-				:fields="fieldsInCollection" :show-select="showSelect" @select-all="selectAll" />
 			<div class="grid" :class="{ 'single-row': isSingleRow }">
 				<v-list>
 					<card v-for="item in items" :key="item[primaryKeyField.field]" v-model="selectionWritable"
-						:fields="fieldsInCollection" :item-key="primaryKeyField.field" :collection="collection"
-						:item="item" :imageFit="imageFit" :icon="icon" :tag="tag" :idShow="idShow" :title="title"
+						:fields="selectedFieldsWritable" :item-key="primaryKeyField.field" :collection="collection" :item="item"
+						:imageFit="imageFit" :icon="icon" :tag="tag" :idShow="idShow" :title="title"
 						:subtitle="subtitle" :imageSource="imageSource ? item[imageSource] : null"
 						:select-mode="selectMode || (selection && selection.length > 0)" :to="getLinkForItem(item)"
 						:readonly="readonly" :size="size" />
@@ -93,6 +94,10 @@ export default defineComponent({
 				Item[]
 			>,
 			required: true,
+		},
+		selectedFields: {
+			type: Array as PropType<Field[]>,
+			default: () => [],
 		},
 		showSelect: {
 			type: String as PropType<ShowSelect>,
@@ -235,22 +240,24 @@ export default defineComponent({
 		"update:size",
 		"update:sort",
 		"update:width",
+		"update:selectedFields"
 	],
 	setup(props, { emit }) {
 		const { t } = useI18n();
-		console.log('Collection in layout.vue:', props.collection);
-
+		const selectedFields = ref([]);
 		const selectionWritable =
 			useSync(
 				props,
 				"selection",
 				emit
 			);
+
 		const limitWritable = useSync(
 			props,
 			"limit",
 			emit
 		);
+
 		const sizeWritable = useSync(
 			props,
 			"size",
@@ -261,6 +268,15 @@ export default defineComponent({
 			"sort",
 			emit
 		);
+
+		const selectedFieldsWritable = useSync(
+			props,
+			"selectedFields", // Sync with the selectedFields prop
+			emit
+		);
+
+
+
 
 		const mainElement = inject<
 			Ref<Element | undefined>
@@ -298,6 +314,8 @@ export default defineComponent({
 			sortWritable,
 			layoutElement,
 			width,
+			selectedFields,
+			selectedFieldsWritable
 		};
 	},
 });
